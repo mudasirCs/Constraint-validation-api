@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Form validation practice</title>
+    <style>
+      form div {
+        display: flex;
+        flex-direction: column;
+      }
+
+      form div input {
+        width: 200px;
+      }
+
+      form div input:invalid:required {
+        background-image: linear-gradient(to top, yellow, orange);
+      }
+
+      form div input:invalid {
+        border: 2px dotted rgb(223, 85, 43);
+      }
+
+      form div input:valid {
+        background-color: #fff;
+        background-color: light-dark(
+          rgb(232, 240, 254),
+          rgba(70, 90, 126, 0.4)
+        );
+        border-width: 1px;
+        border-style: inset;
+        border-color: light-dark(rgb(118, 118, 118), rgb(133, 133, 133));
+      }
+
+      form div input[type="submit"] {
+        margin-top: 15px;
+        background-color: #fda335;
+        border: none;
+        color: white;
+        border-radius: 5px;
+      }
+
+      form div input[type="submit"]:hover {
+        color: black;
+        background-color: yellow;
+        border: 1px solid black;
+      }
+
+      form div span.error.active {
+        background-color: rgb(161, 6, 6);
+        color: #fff;
+        width: 208px;
+        border-radius: 0 0 5px 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <form novalidate>
+      <div>
+        <label for="mail">Email:</label
+        ><input type="email" required="required" id="mail" name="mail" />
+        <span class="error"></span>
+      </div>
+      <div>
+        <label for="country">Country:</label
+        ><input list="countries" required id="country" name="country" />
+        <datalist id="countries">
+          <option value="US">United States</option>
+          <option value="CA">Canada</option>
+          <option value="MX">Mexico</option>
+          <option value="UK">United Kingdom</option>
+          <option value="DE">Germany</option>
+          <option value="FR">France</option>
+          <option value="IT">Italy</option>
+          <option value="JP">Japan</option>
+          <option value="CN">China</option>
+          <option value="IN">India</option>
+        </datalist>
+
+        <span class="error"></span>
+      </div>
+      <div>
+        <label for="ZIP">Zip:</label
+        ><input type="text" required="required" id="ZIP" name="ZIP" />
+        <span class="error"></span>
+      </div>
+      <div>
+        <label for="password">Password:</label
+        ><input
+          type="password"
+          required="required"
+          id="password"
+          name="password"
+        />
+        <span class="error"></span>
+      </div>
+      <div>
+        <label for="re-password">Confirm Password:</label
+        ><input
+          type="password"
+          required="required"
+          id="re-password"
+          name="re-password"
+        />
+        <span class="error"></span>
+      </div>
+      <div>
+        <input type="submit" name="submit" id="submit" />
+      </div>
+    </form>
+  </body>
+  <script defer>
+    const countryCodes = {
+      US: {
+        regex: /^\d{5}(?:-\d{4})?$/,
+        errorMessage:
+          "Please enter a valid US ZIP code. Example: 12345 or 12345-6789.",
+      },
+      CA: {
+        regex: /^[A-Za-z]\d[A-Za-z] \d[A-Za-z]\d$/,
+        errorMessage:
+          "Please enter a valid Canadian postal code. Example: A1A 1A1.",
+      },
+      MX: {
+        regex: /^\d{5}$/,
+        errorMessage:
+          "Please enter a valid Mexican postal code. Example: 12345.",
+      },
+      UK: {
+        regex: /^(GIR 0AA|[A-Z]{1,2}\d[A-Z\d]? \d[A-Z]{2})$/,
+        errorMessage:
+          "Please enter a valid UK postcode. Example: AB1 2CD or AB12 3CD.",
+      },
+      DE: {
+        regex: /^(?!01000|99999)(0[1-9]\d{3}|[1-9]\d{4})$/,
+        errorMessage:
+          "Please enter a valid German postal code. Example: 12345.",
+      },
+      FR: {
+        regex: /^(F-)?((2[A|B])|[0-9]{2})[0-9]{3}$/,
+        errorMessage:
+          "Please enter a valid French postal code. Example: 75001.",
+      },
+      IT: {
+        regex: /^(I-)?\d{5}$/,
+        errorMessage:
+          "Please enter a valid Italian postal code. Example: 00100.",
+      },
+      JP: {
+        regex: /^\d{3}-\d{4}$/,
+        errorMessage:
+          "Please enter a valid Japanese postal code. Example: 123-4567.",
+      },
+      CN: {
+        regex: /^[1-9]\d{5}$/,
+        errorMessage:
+          "Please enter a valid Chinese postal code. Example: 123456.",
+      },
+      IN: {
+        regex: /^\d{6}$/,
+        errorMessage:
+          "Please enter a valid Indian postal code. Example: 123456.",
+      },
+    };
+
+    const form = document.querySelector("form");
+    const email = document.getElementById("mail");
+    const country = document.getElementById("country");
+    const zip = document.getElementById("ZIP");
+    const password = document.getElementById("password");
+    const confirmPassword = document.getElementById("re-password");
+
+    const emailError = document.querySelector("input#mail + span.error");
+    const countryError = document.querySelector("input#country ~ span.error");
+    const zipError = document.querySelector("input#ZIP + span.error");
+    const passwordError = document.querySelector("input#password + span.error");
+    const confirmPasswordError = document.querySelector(
+      "input#re-password + span.error"
+    );
+
+    // const listOfCountries = Array.from(Object.keys(countryCodes));
+    const listOfCountries = Array.from(
+      document.querySelectorAll("datalist#countries option")
+    ).map((option) => option.value);
+
+    //can add custom styling and cues for  zip
+    zip.disabled = true;
+    confirmPassword.disabled = true;
+
+    const handleEvent = (handler, errorHandler) => {
+      handler.addEventListener("change", (event) => {
+        if (!handler.validity.valid) {
+          showError(handler, errorHandler);
+        } else {
+          errorHandler.textContent = "";
+          errorHandler.className = "error";
+        }
+      });
+    };
+
+    //refactor the custom logics in switch statements SOLID
+    //modify handleEvent
+    country.addEventListener("change", (event) => {
+      const enteredCountry = country.value;
+      if (!listOfCountries.includes(enteredCountry)) {
+        country.setCustomValidity(
+          `You have entered ${enteredCountry}, which is not part of the list of countries!`
+        );
+        zip.disabled = true;
+        showError(country, countryError);
+      } else {
+        countryError.textContent = "";
+        countryError.className = "error";
+        country.setCustomValidity("");
+        zip.disabled = false;
+      }
+    });
+
+    zip.addEventListener("change", (event) => {
+      let expression = RegExp(countryCodes[country.value]["regex"]);
+      if (!expression.test(zip.value)) {
+        zip.setCustomValidity(countryCodes[country.value]["errorMessage"]);
+        showError(zip, zipError);
+      } else {
+        zip.setCustomValidity("");
+      }
+    });
+
+    const passwordExpression = new RegExp(
+      "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$"
+    );
+
+    password.addEventListener("change", (event) => {
+      if (!passwordExpression.test(password.value)) {
+        password.setCustomValidity(
+          "Password needs to contain atleast one uppercase, one lowercase, one number and a special character and needs to be atleast 8 characters long"
+        );
+        confirmPassword.disabled = true;
+        showError(password, passwordError);
+      } else {
+        password.style.backgroundColor = "#c7ffc7";
+        passwordError.textContent = "";
+        passwordError.className = "error";
+        password.setCustomValidity("");
+        confirmPassword.disabled = false;
+      }
+    });
+
+    confirmPassword.addEventListener("change", (event) => {
+      if (!(password.value === confirmPassword.value)) {
+        confirmPassword.setCustomValidity("Passwords do not match!");
+        showError(confirmPassword, confirmPasswordError);
+      } else {
+        confirmPassword.style.backgroundColor = "#c7ffc7";
+        confirmPasswordError.textContent = "";
+        confirmPasswordError.className = "error";
+        confirmPassword.setCustomValidity("");
+      }
+    });
+
+    handleEvent(email, emailError);
+
+    form.addEventListener("submit", (event) => {
+      let isValid = true;
+
+      const fields = [
+        { input: email, error: emailError },
+        { input: country, error: countryError },
+        { input: zip, error: zipError },
+        { input: password, error: passwordError },
+        { input: confirmPassword, error: confirmPasswordError },
+      ];
+
+      fields.forEach(({ input, error }) => {
+        if (!input.validity.valid) {
+          showError(input, error);
+          isValid = false;
+        }
+      });
+
+      if (!isValid) {
+        event.preventDefault();
+      } else alert("🙌 Form submitted successfully");
+    });
+
+    //make general and include all error messages
+    function showError(inputField, inputErrorField) {
+      if (!inputField.validity.valid) {
+        inputErrorField.textContent = inputField.validationMessage;
+        inputErrorField.className = "error active";
+      } else if (inputField.customError) {
+        inputErrorField.textContent = inputField.validationMessage;
+        inputErrorField.className = "error active";
+      } else if (inputField.validity.valueMissing) {
+        inputErrorField.textContent = inputField.validationMessage;
+        inputErrorField.className = "error active";
+      }
+    }
+  </script>
+</html>
